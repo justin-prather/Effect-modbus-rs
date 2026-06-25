@@ -1,5 +1,4 @@
 import type {
-  AsyncSerialModbusClient,
   ReadRegistersOptions,
   WriteSingleRegisterOptions,
   WriteMultipleRegistersOptions,
@@ -19,9 +18,25 @@ import type {
 import { Effect } from "effect";
 import { type ModbusError, toModbusError } from "./errors.js";
 
-export type { AsyncSerialModbusClient };
+interface ModbusClientMethods {
+  readHoldingRegisters(opts: ReadRegistersOptions): Promise<number[]>;
+  readInputRegisters(opts: ReadRegistersOptions): Promise<number[]>;
+  writeSingleRegister(opts: WriteSingleRegisterOptions): Promise<void>;
+  writeMultipleRegisters(opts: WriteMultipleRegistersOptions): Promise<void>;
+  readWriteMultipleRegisters(opts: ReadWriteMultipleRegistersOptions): Promise<number[]>;
+  readCoils(opts: ReadBitsOptions): Promise<boolean[]>;
+  writeSingleCoil(opts: WriteSingleCoilOptions): Promise<void>;
+  writeMultipleCoils(opts: WriteMultipleCoilsOptions): Promise<void>;
+  readDiscreteInputs(opts: ReadBitsOptions): Promise<boolean[]>;
+  readFifoQueue(opts: ReadFifoQueueOptions): Promise<FifoQueueResponse>;
+  readFileRecord(opts: ReadFileRecordOptions): Promise<number[][]>;
+  writeFileRecord(opts: WriteFileRecordOptions): Promise<void>;
+  readExceptionStatus(): Promise<number>;
+  diagnostics(opts: DiagnosticsOptions): Promise<DiagnosticsResponse>;
+  readDeviceIdentification(opts: ReadDeviceIdentificationOptions): Promise<DeviceIdentificationResponse>;
+}
 
-export interface EffectSerialClient {
+export interface EffectModbusClient {
   readHoldingRegisters(opts: ReadRegistersOptions): Effect.Effect<number[], ModbusError>;
   readInputRegisters(opts: ReadRegistersOptions): Effect.Effect<number[], ModbusError>;
   writeSingleRegister(opts: WriteSingleRegisterOptions): Effect.Effect<void, ModbusError>;
@@ -39,7 +54,7 @@ export interface EffectSerialClient {
   readDeviceIdentification(opts: ReadDeviceIdentificationOptions): Effect.Effect<DeviceIdentificationResponse, ModbusError>;
 }
 
-export const makeEffectSerialClient = (client: AsyncSerialModbusClient): EffectSerialClient => ({
+export const makeEffectModbusClient = (client: ModbusClientMethods): EffectModbusClient => ({
   readHoldingRegisters: (opts) =>
     Effect.tryPromise({
       try: () => client.readHoldingRegisters(opts),

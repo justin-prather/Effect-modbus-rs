@@ -1,7 +1,7 @@
-import { type AsyncRtuTransport, type RtuTransportOptions } from "modbus-rs";
+import { type AsyncRtuTransport, type AsyncSerialModbusClient, type RtuTransportOptions } from "modbus-rs";
 import { Effect } from "effect";
 import { toModbusError } from "./errors.js";
-import { type AsyncSerialModbusClient, makeEffectSerialClient } from "./serial-client.js";
+import { makeEffectModbusClient } from "./modbus-client.js";
 
 export class RtuTransportService extends Effect.Service<RtuTransportService>()(
   "RtuTransportService",
@@ -29,7 +29,7 @@ export class RtuTransportService extends Effect.Service<RtuTransportService>()(
             });
             clientSet.set(unitId, client);
           }
-          return makeEffectSerialClient(client);
+          return makeEffectModbusClient(client);
         }),
         setRequestTimeout: transport.setRequestTimeout.bind(transport),
         clearRequestTimeout: transport.clearRequestTimeout.bind(transport),

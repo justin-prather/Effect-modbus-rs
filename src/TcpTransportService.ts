@@ -1,21 +1,21 @@
-import { type AsyncAsciiTransport, type AsyncSerialModbusClient, type AsciiTransportOptions } from "modbus-rs";
+import { type AsyncTcpTransport, type AsyncTcpModbusClient, type TcpTransportOptions } from "modbus-rs";
 import { Effect } from "effect";
 import { toModbusError } from "./errors.js";
 import { makeEffectModbusClient } from "./modbus-client.js";
 
-export class AsciiTransportService extends Effect.Service<AsciiTransportService>()(
-  "AsciiTransportService",
+export class TcpTransportService extends Effect.Service<TcpTransportService>()(
+  "TcpTransportService",
   {
-    scoped: Effect.fnUntraced(function* (options: AsciiTransportOptions) {
-      const { AsyncAsciiTransport } = yield* Effect.promise(
+    scoped: Effect.fnUntraced(function* (options: TcpTransportOptions) {
+      const { AsyncTcpTransport } = yield* Effect.promise(
         () => import("modbus-rs"),
       );
 
-      const transport: AsyncAsciiTransport = yield* Effect.tryPromise({
-        try: () => AsyncAsciiTransport.open(options),
+      const transport: AsyncTcpTransport = yield* Effect.tryPromise({
+        try: () => AsyncTcpTransport.connect(options),
         catch: (error) => toModbusError(error as Error),
       });
-      const clientSet = new Map<number, AsyncSerialModbusClient>();
+      const clientSet = new Map<number, AsyncTcpModbusClient>();
 
       yield* Effect.addFinalizer(() => Effect.promise(() => transport.close()));
 
