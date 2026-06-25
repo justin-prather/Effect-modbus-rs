@@ -1,0 +1,56 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "effect-modbus-rs",
+      "dependencies": {
+        "effect": "^3.21.4",
+        "modbus-rs": "^0.15.0",
+      },
+      "devDependencies": {
+        "@effect/language-service": "^0.86.2",
+        "@types/bun": "latest",
+        "tsc": "^2.0.4",
+      },
+      "peerDependencies": {
+        "typescript": "^6.0.3",
+      },
+    },
+  },
+  "packages": {
+    "@effect/language-service": ["@effect/language-service@0.86.2", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-SaPln+8srOqDJDUwNTDmP5e+IYpEDr9+1epGznnsLqu8xvo6VnxyWARdeLpqvZJlb0Pgy9ca7ppqvvdWbHPXAg=="],
+
+    "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
+
+    "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
+
+    "@types/node": ["@types/node@26.0.1", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-fc3KiUoBt6kie0N9bIW3E47vZsuaMf0PM2AaUpLCLT0s/LvX1nxAim6Fc049cNxODPpGm6qRAuUOB86SkRuPQw=="],
+
+    "bun-types": ["bun-types@1.3.14", "", { "dependencies": { "@types/node": "*" } }, "sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ=="],
+
+    "effect": ["effect@3.21.4", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-B89v/xSgPbl1J2Ai2u18jxq3odpFauU1rC6/eSs4FeNHi72kwKdJp12VGigvRV2lK+kRnx+OOz41XV8guZd4gQ=="],
+
+    "fast-check": ["fast-check@3.23.2", "", { "dependencies": { "pure-rand": "^6.1.0" } }, "sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A=="],
+
+    "modbus-rs": ["modbus-rs@0.15.0", "", { "optionalDependencies": { "modbus-rs-darwin-arm64": "0.15.0", "modbus-rs-darwin-x64": "0.15.0", "modbus-rs-linux-arm64-gnu": "0.15.0", "modbus-rs-linux-x64-gnu": "0.15.0", "modbus-rs-win32-x64-msvc": "0.15.0" } }, "sha512-cZ60Lk/IK55p/2rnFK8zQMeKW5T7kfqUX11ftz4CzFjgPBh+YDmsNNDYRpZuSmNIpu1vNnS8Vv3R2ydteVylsg=="],
+
+    "modbus-rs-darwin-arm64": ["modbus-rs-darwin-arm64@0.15.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Yf1eJxCqDTxGYMbTWBPhS+vF2JRGNKDloJ8IKvRqWyi+hMBPX0B7M+X218oLPdw65ycEVQFaf0KGpFVhFQhFSg=="],
+
+    "modbus-rs-darwin-x64": ["modbus-rs-darwin-x64@0.15.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-wICc1ghh87yRWaA69grOhknruvHZDV0woFgk7ZGNuuHlyqbLJ8/dCftuRwOu9YctX4VJJlOugl0iuiMGQ09bFg=="],
+
+    "modbus-rs-linux-arm64-gnu": ["modbus-rs-linux-arm64-gnu@0.15.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-qF4bZY16GHOD9nYbhIP/YXpVU2OtVey7iXwH7yz4fVp/rvUEFfBtfgi9pO8K/lnl5dostDoqjP48SJ9f6yL5Jg=="],
+
+    "modbus-rs-linux-x64-gnu": ["modbus-rs-linux-x64-gnu@0.15.0", "", { "os": "linux", "cpu": "x64" }, "sha512-OXK+VWllBh6WD2Dcu56wmdN1CVMhds8Z6dx80ZzeIbFWu/Yoewn26tIy6syaOO98xdjiKIlOYSgjKLimexvccQ=="],
+
+    "modbus-rs-win32-x64-msvc": ["modbus-rs-win32-x64-msvc@0.15.0", "", { "os": "win32", "cpu": "x64" }, "sha512-rDwnWF1k59R5Ut6N0L3hOY5TeQNaoWh5PL9qwicfGFuC+u81Nuk13d2QKV2BmzbxdFHD4c1IfqFBuhwf4t8wYg=="],
+
+    "pure-rand": ["pure-rand@6.1.0", "", {}, "sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA=="],
+
+    "tsc": ["tsc@2.0.4", "", { "bin": { "tsc": "bin/tsc" } }, "sha512-fzoSieZI5KKJVBYGvwbVZs/J5za84f2lSTLPYf6AGiIf43tZ3GNrI1QzTLcjtyDDP4aLxd46RTZq1nQxe7+k5Q=="],
+
+    "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+
+    "undici-types": ["undici-types@8.3.0", "", {}, "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ=="],
+  }
+}

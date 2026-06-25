@@ -1,0 +1,17 @@
+{
+  "name": "effect-modbus-rs",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@effect/language-service": "^0.86.2",
+    "@types/bun": "latest",
+    "tsc": "^2.0.4"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "effect": "^3.21.4",
+    "modbus-rs": "^0.15.0"
+  }
+}
