@@ -12,7 +12,6 @@ import {
   Console,
   Effect,
   Either,
-  Layer,
   LogLevel,
   Logger,
   Schedule,
@@ -68,7 +67,7 @@ BunRuntime.runMain(
       TcpTransportService.Default({
         host: "localhost",
         port: 502,
-      }).pipe(Layer.provide(Logger.pretty)),
+      }),
     ),
     Effect.catchTags({
       ModbusTimeoutError: (err) => Console.log(`Timeout: ${err.message}`),
@@ -86,5 +85,4 @@ BunRuntime.runMain(
     Logger.withMinimumLogLevel(LogLevel.Debug),
     Effect.scoped,
   ),
-  { disablePrettyLogger: true },
 );

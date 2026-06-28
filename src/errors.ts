@@ -97,6 +97,27 @@ export class ModbusInternalError extends Data.TaggedError("ModbusInternalError")
 }> {}
 
 /**
+ * Error indicating a transport operation was attempted before the
+ * connection was established or after it was closed.
+ *
+ * This is a **local** error — it is never returned by `modbus-rs`.
+ * It is thrown by the transport service when `setRequestTimeout`,
+ * `clearRequestTimeout`, or `withClient` is called before a
+ * successful connection.
+ *
+ * Connect by calling `withClient(unitId)` on the transport service.
+ * The connection is established lazily on the first call.
+ *
+ * @see ModbusNotConnectedError — Triggered when the transport is null.
+ */
+export class ModbusNotConnectedError extends Data.TaggedError("ModbusNotConnectedError")<{
+  /** The original cause (typically a descriptive error). */
+  readonly cause: Error;
+  /** Human-readable explanation of the error. */
+  readonly message: string;
+}> {}
+
+/**
  * Union of all typed Modbus errors emitted by this library.
  *
  * Handle with {@linkcode Effect.catchTags}:
@@ -119,6 +140,7 @@ export type ModbusError =
   | ModbusTransportError
   | ModbusInvalidArgumentError
   | ModbusConnectionClosedError
+  | ModbusNotConnectedError
   | ModbusInternalError;
 
 /**

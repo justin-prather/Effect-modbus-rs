@@ -427,8 +427,8 @@ export const makeMockTransport = (devices: SlaveDeviceDefinitions) => {
           return makeMockModbusClient(state, unitId);
         }),
 
-        setRequestTimeout: (_timeoutMs: number) => {},
-        clearRequestTimeout: () => {},
+        setRequestTimeout: (_timeoutMs: number) => Effect.void,
+        clearRequestTimeout: () => Effect.void,
         reconnect: Effect.logDebug("Mock: reconnecting"),
         close: Effect.logDebug("Mock: closing transport"),
         hasPendingRequests: () => false,

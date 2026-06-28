@@ -4,17 +4,16 @@ import {
   type TcpTransportOptions,
 } from "modbus-rs";
 import { Effect, Exit, Layer, Scope } from "effect";
-import { toModbusError } from "./errors.js";
+import { ModbusNotConnectedError, toModbusError } from "./errors.js";
 import { makeEffectModbusClient } from "./modbus-client.js";
 import { SlaveDeviceDefinitions, makeMockTransport } from "./mocks.js";
 
 /**
  * Effect-TS scoped service wrapping a `modbus-rs` TCP transport.
  *
- * Connects to a remote Modbus device or gateway via TCP socket using
- * {@link AsyncTcpTransport.connect} and manages a scoped lifecycle —
- * the transport is automatically closed when the consuming `Scope`
- * finalizes.
+ * The transport connection is **deferred** — it is not opened until the
+ * first call to {@link withClient}. Connection errors surface through
+ * `withClient` where they can be handled with `Effect.catchTags`.
  *
  * Device clients are cached per {@link CreateClientOptions.unitId | unitId}
  * so that repeated calls to `withClient` for the same unit share the
@@ -43,39 +42,61 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
         () => import("modbus-rs"),
       );
 
-      /**
-       * The underlying TCP transport instance, connected to the remote host.
-       */
-      const transport: AsyncTcpTransport = yield* Effect.tryPromise({
-        try: () => AsyncTcpTransport.connect(options),
-        catch: (error) => toModbusError(error as Error),
-      });
+      let transport: AsyncTcpTransport | null = null;
+      let connectPromise: Promise<AsyncTcpTransport> | null = null;
+      let reconnectPromise: Promise<void> | null = null;
 
-      /**
-       * Cache of device clients keyed by unit ID, so the same unit's
-       * client is reused across the scope's lifetime.
-       */
       const clientSet = new Map<number, AsyncTcpModbusClient>();
 
       let closed = false;
 
-      /**
-       * Registers a finalizer that closes the transport when the
-       * consuming Effect scope completes or is interrupted.
-       */
+      const ensureOpen = Effect.fnUntraced(function* () {
+        if (transport) return transport;
+        if (closed) {
+          return yield* new ModbusNotConnectedError({
+            cause: new Error("Transport has been closed"),
+            message: "Transport has been closed",
+          });
+        }
+        if (!connectPromise) {
+          connectPromise = AsyncTcpTransport.connect(options);
+        }
+        const t = yield* Effect.tryPromise({
+          try: () => connectPromise!,
+          catch: (error) => toModbusError(error as Error),
+        }).pipe(
+          Effect.catchAll((err) => {
+            connectPromise = null;
+            return Effect.fail(err);
+          }),
+        );
+        transport = t;
+        return t;
+      });
+
       yield* Effect.addFinalizer(() => {
         if (closed) return Effect.void;
         closed = true;
+        const t = transport;
+        if (!t) return Effect.void;
         return Effect.andThen(
           Effect.logDebug("Closing TcpTransportService"),
-          Effect.promise(() => transport.close()),
+          Effect.promise(() => t.close()),
         );
       });
+
+      const notConnectedMsg =
+        "Transport is not connected. Call withClient() first.";
 
       return {
         /**
          * Retrieves (or creates and caches) a Modbus client for the
          * given unit ID, wrapping it as an {@link EffectModbusClient}.
+         *
+         * The underlying transport connection is established lazily on
+         * the first call. Connection errors surface through this method
+         * as typed {@link ModbusError} variants and can be handled with
+         * `Effect.catchTags`.
          *
          * Each client shares the parent TCP transport. Caching avoids
          * redundant `transport.createClient` calls and ensures any
@@ -87,15 +108,16 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
          *          lifetime.
          */
         withClient: Effect.fnUntraced(function* (unitId: number) {
+          const t = yield* ensureOpen();
           let client = clientSet.get(unitId);
           if (!client) {
             client = yield* Effect.try({
-              try: () => transport.createClient({ unitId }),
+              try: () => t.createClient({ unitId }),
               catch: (error) => toModbusError(error as Error),
             });
             clientSet.set(unitId, client);
           }
-          return makeEffectModbusClient(client);
+          return makeEffectModbusClient(client!);
         }),
 
         /**
@@ -104,21 +126,46 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
          * Delegates to {@link AsyncTcpTransport.setRequestTimeout}.
          *
          * @param timeoutMs - Timeout duration in milliseconds.
+         * @returns An Effect that resolves when the timeout has been set.
          */
-        setRequestTimeout: transport.setRequestTimeout.bind(transport),
+        setRequestTimeout: Effect.fnUntraced(function* (timeoutMs: number) {
+          const t = transport;
+          if (!t) {
+            return yield* new ModbusNotConnectedError({
+              cause: new Error(notConnectedMsg),
+              message: notConnectedMsg,
+            });
+          }
+          t.setRequestTimeout(timeoutMs);
+        }),
 
         /**
          * Clears any previously set per-request timeout.
          *
          * Delegates to {@link AsyncTcpTransport.clearRequestTimeout}.
+         *
+         * @returns An Effect that resolves when the timeout has been cleared.
          */
-        clearRequestTimeout: transport.clearRequestTimeout.bind(transport),
+        clearRequestTimeout: Effect.fnUntraced(function* () {
+          const t = transport;
+          if (!t) {
+            return yield* new ModbusNotConnectedError({
+              cause: new Error(notConnectedMsg),
+              message: notConnectedMsg,
+            });
+          }
+          t.clearRequestTimeout();
+        }),
 
         /**
          * Reconnects the TCP transport after a disconnect.
          *
-         * Useful for recovering from {@link ModbusConnectionClosedError}
-         * or {@link ModbusTransportError} conditions.
+         * If the transport was never connected, this performs the
+         * initial connection (same as the first `withClient` call).
+         *
+         * In a multi-fiber environment, concurrent calls share a single
+         * underlying reconnect request — the first call triggers the
+         * reconnect and subsequent calls await the same promise.
          *
          * **Does not work after `close()` is called** — `close()` is a
          * terminal action that shuts down the service scope, and the
@@ -127,9 +174,26 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
          *
          * @returns An Effect that resolves when reconnection completes.
          */
-        reconnect: Effect.tryPromise({
-          try: () => transport.reconnect(),
-          catch: (error) => toModbusError(error as Error),
+        reconnect: Effect.fnUntraced(function* () {
+          if (transport) {
+            if (!reconnectPromise) {
+              reconnectPromise = transport
+                .reconnect()
+                .then(() => {
+                  reconnectPromise = null;
+                })
+                .catch((err) => {
+                  reconnectPromise = null;
+                  throw err;
+                });
+            }
+            yield* Effect.tryPromise({
+              try: () => reconnectPromise!,
+              catch: (error) => toModbusError(error as Error),
+            });
+          } else {
+            yield* ensureOpen();
+          }
         }),
 
         /**
@@ -149,10 +213,13 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
         close: Effect.fnUntraced(function* () {
           if (closed) return;
           closed = true;
-          yield* Effect.tryPromise({
-            try: () => transport.close(),
-            catch: (error) => toModbusError(error as Error),
-          });
+          const t = transport;
+          if (t) {
+            yield* Effect.tryPromise({
+              try: () => t.close(),
+              catch: (error) => toModbusError(error as Error),
+            });
+          }
           const scope = yield* Effect.scope;
           yield* Scope.close(scope as Scope.CloseableScope, Exit.void);
         }),
@@ -162,10 +229,15 @@ export class TcpTransportService extends Effect.Service<TcpTransportService>()(
          * Modbus requests.
          *
          * Delegates to {@link AsyncTcpTransport.pendingRequests}.
+         * Returns `false` if the transport has not been opened yet.
          *
          * @returns `true` if there are pending requests, `false` otherwise.
          */
-        hasPendingRequests: () => transport.pendingRequests,
+        hasPendingRequests: () => {
+          const t = transport;
+          if (!t) return false;
+          return t.pendingRequests;
+        },
       };
     }),
   },
