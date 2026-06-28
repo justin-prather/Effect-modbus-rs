@@ -3,7 +3,7 @@ import {
   type AsyncSerialModbusClient,
   type RtuTransportOptions,
 } from "modbus-rs";
-import { Effect, Layer } from "effect";
+import { Effect, Exit, Layer, Scope } from "effect";
 import { toModbusError } from "./errors.js";
 import { makeEffectModbusClient } from "./modbus-client.js";
 import { makeMockTransport } from "./mocks.js";
@@ -66,7 +66,10 @@ export class RtuTransportService extends Effect.Service<RtuTransportService>()(
       yield* Effect.addFinalizer(() => {
         if (closed) return Effect.void;
         closed = true;
-        return Effect.promise(() => transport.close());
+        return Effect.andThen(
+          Effect.logDebug("Closing RtuTransportService"),
+          Effect.promise(() => transport.close()),
+        );
       });
 
       return {
@@ -117,6 +120,11 @@ export class RtuTransportService extends Effect.Service<RtuTransportService>()(
          * Useful for recovering from {@link ModbusConnectionClosedError}
          * or {@link ModbusTransportError} conditions.
          *
+         * **Does not work after `close()` is called** — `close()` is a
+         * terminal action that shuts down the service scope, and the
+         * underlying `modbus-rs` transport does not support reconnection
+         * once closed.
+         *
          * @returns An Effect that resolves when reconnection completes.
          */
         reconnect: Effect.tryPromise({
@@ -125,21 +133,28 @@ export class RtuTransportService extends Effect.Service<RtuTransportService>()(
         }),
 
         /**
-         * Closes the transport connection immediately.
+         * Closes the transport connection and terminates the service.
+         *
+         * This is a **terminal action**. The underlying `modbus-rs` transport
+         * discards its native handle on close and is not reconnectable. Any
+         * subsequent call to `reconnect` or `withClient` will fail.
          *
          * Normally the transport is closed via the scope finalizer, but
          * this method allows explicit early termination. Safe to call
          * multiple times — subsequent calls are no-ops.
          *
-         * @returns An Effect that resolves when the transport is closed.
+         * @returns An Effect that resolves when the transport is closed and
+         *          the service scope has been torn down.
          */
-        close: Effect.suspend(() => {
-          if (closed) return Effect.void;
+        close: Effect.fnUntraced(function* () {
+          if (closed) return;
           closed = true;
-          return Effect.tryPromise({
+          yield* Effect.tryPromise({
             try: () => transport.close(),
             catch: (error) => toModbusError(error as Error),
           });
+          const scope = yield* Effect.scope;
+          yield* Scope.close(scope as Scope.CloseableScope, Exit.void);
         }),
 
         /**

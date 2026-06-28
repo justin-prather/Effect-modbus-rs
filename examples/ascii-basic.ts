@@ -7,7 +7,7 @@
  * @example bun run examples/ascii-basic.ts
  */
 
-import { Console, Effect } from "effect";
+import { Console, Effect, Layer, LogLevel, Logger } from "effect";
 import { AsciiTransportService } from "../src/AsciiTransportService";
 
 const program = Effect.gen(function* () {
@@ -32,7 +32,7 @@ program.pipe(
     AsciiTransportService.Default({
       portPath: "/dev/ttyUSB0",
       baudRate: 9600,
-    }),
+    }).pipe(Layer.provide(Logger.pretty)),
   ),
   Effect.catchTags({
     ModbusTimeoutError: (err) => Console.log(`Timeout: ${err.message}`),
@@ -46,6 +46,7 @@ program.pipe(
       Console.log(`Invalid argument: ${err.message}`),
     ModbusInternalError: (err) => Console.log(`Internal error: ${err.message}`),
   }),
+  Logger.withMinimumLogLevel(LogLevel.Debug),
   Effect.scoped,
   Effect.runPromise,
 );
