@@ -20,6 +20,8 @@ import type {
 import { Effect } from "effect";
 import { type ModbusError, toModbusError } from "./errors.js";
 
+export type AnyModbusClient = AsyncSerialModbusClient | AsyncTcpModbusClient;
+
 /**
  * Effect-ified Modbus client wrapping a `modbus-rs` transport client.
  *
