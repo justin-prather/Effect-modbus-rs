@@ -27,6 +27,6 @@
   },
   "dependencies": {
     "effect": "^3.21.4",
-    "modbus-rs": "^0.15.2"
+    "modbus-rs": "^0.15.3"
   }
 }

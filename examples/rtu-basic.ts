@@ -20,11 +20,11 @@ const program = Effect.gen(function* () {
     quantity: 10,
   });
 
-  console.log("Holding registers:", holdingRegisters);
+  yield* Console.log("Holding registers:", holdingRegisters);
 
   const coils = yield* client.readCoils({ address: 0, quantity: 8 });
 
-  console.log("Coils:", coils);
+  yield* Console.log("Coils:", coils);
 });
 
 program.pipe(

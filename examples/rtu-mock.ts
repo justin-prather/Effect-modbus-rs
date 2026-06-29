@@ -34,18 +34,18 @@ const program = Effect.gen(function* () {
   const client = yield* transport.withClient(1);
 
   const coils = yield* client.readCoils({ address: 0, quantity: 3 });
-  console.log("Coils (before):", coils);
+  yield* Console.log("Coils (before):", coils);
 
   yield* client.writeSingleCoil({ address: 1, value: true });
 
   const coilsAfter = yield* client.readCoils({ address: 0, quantity: 3 });
-  console.log("Coils (after):", coilsAfter);
+  yield* Console.log("Coils (after):", coilsAfter);
 
   const registers = yield* client.readHoldingRegisters({
     address: 0,
     quantity: 3,
   });
-  console.log("Holding registers:", registers);
+  yield* Console.log("Holding registers:", registers);
 
   yield* client.writeSingleRegister({ address: 2, value: 999 });
 
@@ -53,7 +53,7 @@ const program = Effect.gen(function* () {
     address: 0,
     quantity: 3,
   });
-  console.log("Holding registers (after):", registersAfter);
+  yield* Console.log("Holding registers (after):", registersAfter);
 });
 
 const mockLayer = RtuTransportService.makeMockTransport([device])({

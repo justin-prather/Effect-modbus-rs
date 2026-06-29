@@ -35,34 +35,33 @@ const program = Effect.gen(function* () {
     writeAddress: 0,
     writeValues: [11, 22, 33],
   });
-  console.log("ReadWriteMultipleRegisters result:", readResult);
+  yield* Console.log("ReadWriteMultipleRegisters result:", readResult);
 
   const registers = yield* client.readHoldingRegisters({
     address: 0,
     quantity: 3,
   });
-  console.log("Holding registers (after r/w):", registers);
+  yield* Console.log("Holding registers (after r/w):", registers);
 
   const discreteInputs = yield* client.readDiscreteInputs({
     address: 0,
     quantity: 1,
   });
-  console.log("Discrete inputs:", discreteInputs);
+  yield* Console.log("Discrete inputs:", discreteInputs);
 
   const inputRegisters = yield* client.readInputRegisters({
     address: 0,
     quantity: 1,
   });
-  console.log("Input registers:", inputRegisters);
+  yield* Console.log("Input registers:", inputRegisters);
 
   yield* client
     .readHoldingRegisters({ address: 10, quantity: 1 })
     .pipe(
       Effect.catchTag("ModbusInvalidArgumentError", (err) =>
-        Effect.sync(() => {
-          console.log("Expected out-of-range error:", err.message);
-          return [] as number[];
-        }),
+        Console.log("Expected out-of-range error:", err.message).pipe(
+          Effect.map(() => [] as number[]),
+        ),
       ),
     );
 });
