@@ -16,7 +16,7 @@ import type {
   WriteSingleCoilOptions,
   WriteSingleRegisterOptions,
 } from "modbus-rs";
-import { ModbusInvalidArgumentError } from "./errors";
+import { ModbusInvalidArgumentError, type ModbusError } from "./errors";
 import type { EffectModbusClient } from "./modbus-client";
 
 /**
@@ -429,8 +429,18 @@ export const makeMockTransport = (devices: SlaveDeviceDefinitions) => {
 
         setRequestTimeout: (_timeoutMs: number) => Effect.void,
         clearRequestTimeout: () => Effect.void,
-        reconnect: Effect.logDebug("Mock: reconnecting"),
-        close: Effect.logDebug("Mock: closing transport"),
+        reconnect: () =>
+          Effect.asVoid(Effect.logDebug("Mock: reconnecting")) as Effect.Effect<
+            void,
+            ModbusError,
+            never
+          >,
+        close: () =>
+          Effect.logDebug("Mock: closing transport") as Effect.Effect<
+            void,
+            ModbusError,
+            never
+          >,
         hasPendingRequests: () => false,
       };
     });

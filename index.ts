@@ -6,9 +6,10 @@
  *
  * ## Transport services
  *
+ * - {@link SerialTransportService} — Abstract serial transport (ASCII or RTU).
  * - {@link RtuTransportService} — Serial RTU transport (RS-232/485).
- * - {@link TcpTransportService} — TCP/IP transport (Modbus/TCP).
  * - {@link AsciiTransportService} — Serial ASCII transport.
+ * - {@link TcpTransportService} — TCP/IP transport (Modbus/TCP).
  *
  * ## Server layers
  *
@@ -40,6 +41,7 @@
 
 export * from "./src/errors";
 export { AsciiTransportService } from "./src/AsciiTransportService";
+export { SerialTransportService } from "./src/SerialTransportService";
 export { TcpTransportService } from "./src/TcpTransportService";
 export { RtuTransportService } from "./src/RtuTransportService";
 export { serialRtuServerLayer, serialAsciiServerLayer } from "./src/SerialModbusServerService";

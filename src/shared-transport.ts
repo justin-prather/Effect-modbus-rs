@@ -24,7 +24,7 @@ export interface TransportServiceApi {
   /** Reconnects the transport. Opens lazily if no prior connection exists. */
   reconnect(): Effect.Effect<void, ModbusError>;
   /** Closes the transport and its scope immediately. */
-  close(): Effect.Effect<void, never>;
+  close(): Effect.Effect<void, ModbusError, Scope.Scope>;
   /** Whether the transport currently has in-flight requests. */
   hasPendingRequests(): boolean;
 }

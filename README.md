@@ -111,6 +111,38 @@ Each transport is a scoped `Effect.Service`. You provide it with `Effect.provide
 
 All transport options types are re-exported from `modbus-rs`.
 
+### Abstract serial transport
+
+`SerialTransportService` is a transport-agnostic tag that can be backed by either RTU or ASCII framing — useful when writing code that doesn't need to commit to a specific serial protocol. Provide it with `fromRtu` or `fromAscii`:
+
+```ts
+import { Console, Effect } from "effect";
+import { SerialTransportService } from "effect-modbus-rs";
+
+const program = Effect.gen(function* () {
+  const transport = yield* SerialTransportService;
+  const client = yield* transport.withClient(1);
+  const coils = yield* client.readCoils({ address: 0, quantity: 2 });
+  console.log("Coils:", coils);
+});
+
+// RTU framing
+program.pipe(
+  Effect.provide(SerialTransportService.fromRtu({ portPath: "/dev/ttyUSB0", baudRate: 9600 })),
+  Effect.scoped,
+  Effect.runPromise,
+);
+
+// Or ASCII framing
+// program.pipe(
+//   Effect.provide(SerialTransportService.fromAscii({ portPath: "/dev/ttyUSB0", baudRate: 9600 })),
+//   Effect.scoped,
+//   Effect.runPromise,
+// );
+```
+
+It also supports `makeMockTransport` for testing:
+
 ## Client API
 
 `transport.withClient(unitId)` returns an `EffectModbusClient` — a typed wrapper around the raw modbus-rs client. All methods return `Effect.Effect<T, ModbusError>`.
@@ -240,10 +272,12 @@ src/
   RtuTransportService.ts     — Scoped Effect.Service wrapping AsyncRtuTransport
   TcpTransportService.ts     — Scoped Effect.Service wrapping AsyncTcpTransport
   AsciiTransportService.ts   — Scoped Effect.Service wrapping AsyncAsciiTransport
+  SerialTransportService.ts  — Abstract serial transport (RTU/ASCII) tag
 examples/
   rtu-basic.ts               — RTU usage pattern
   tcp-basic.ts               — TCP usage pattern
   ascii-basic.ts             — ASCII usage pattern
+  serial-abstract.ts         — Abstract serial transport (RTU or ASCII)
   rtu-mock.ts                — RTU with in-memory mock
   tcp-mock.ts                — TCP with in-memory mock (multi-device)
   ascii-mock.ts              — ASCII with in-memory mock (error-case)
